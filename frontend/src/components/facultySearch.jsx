@@ -24,6 +24,7 @@ import {
 } from "@chakra-ui/react";
 import { subjects } from "../constants";
 
+
 const FacultySearch = ({ selectedSubjects, selectedFaculties, setSelectedFaculties, onClose }) => {
   const [universitySearch, setUniversitySearch] = useState("");
   const [facultySearch, setFacultySearch] = useState("");
@@ -52,7 +53,7 @@ const FacultySearch = ({ selectedSubjects, selectedFaculties, setSelectedFaculti
   const fetchFaculties = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/faculties", {
+      const res = await axios.get(process.env.REACT_APP_API_URL + "/faculties", {
         params: {
           university: universitySearch,
           faculty: facultySearch,

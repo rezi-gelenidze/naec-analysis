@@ -7,7 +7,6 @@ import {
   Input,
   Select,
   VStack,
-  HStack,
   Tag,
   TagLabel,
   TagCloseButton,
@@ -20,7 +19,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalCloseButton,
-  useDisclosure,
 } from "@chakra-ui/react";
 import { subjects } from "../constants";
 

@@ -1,5 +1,3 @@
-// Chakra UI v2 version of the full App.js with complete logic and UI (grant tables + scale bars)
-
 import React, {useState, useRef} from "react";
 import {
     Box,
@@ -19,9 +17,7 @@ import {
     Tr,
     Th,
     Td,
-    Stack,
     Flex,
-    Spacer
 } from "@chakra-ui/react";
 
 import axios from "axios";
@@ -165,7 +161,7 @@ function App() {
                      border="1px solid"
                      borderColor="gray.200"
                      boxShadow="md"
-                     mb={8} mb={8}>
+                     mb={8}>
                     <Table size="sm">
                         <Thead bg="gray.100">
                             <Tr>

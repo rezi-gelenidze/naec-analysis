@@ -25,7 +25,7 @@ import PointInput from "./components/pointInput";
 import FacultySearch from "./components/facultySearch";
 import SubjectsDropdown from "./components/subjectsDropdown";
 
-import {subjects, grant_thresholds, allowed_combinations} from "./constants";
+import {subjects, subject_points, grant_thresholds, allowed_combinations} from "./constants";
 
 
 function App() {
@@ -39,6 +39,24 @@ function App() {
     const [showTables, setShowTables] = useState(false);
     const tableRef = useRef(null);
 
+
+    const prepareAnalyzePayload = (rawPoints, selectedFaculties) => {
+        const points = Object.fromEntries(
+            Object.entries(rawPoints)
+                .map(([key, value]) => {
+                    const normalizedKey = key.replace("_", " ");
+                    const max = subject_points[normalizedKey];
+                    return [normalizedKey, parseFloat((value / max).toFixed(3))];
+                })
+        );
+
+        const faculties = selectedFaculties.map(({faculty_id, year}) => ({
+            faculty_id, year
+        }));
+
+        return { points, faculties };
+    };
+
     const handleSubmit = async () => {
         const validPoints = Object.values(points).every((value) => Number.isInteger(value));
         const validKeys = Object.keys(points).length >= 3 && Object.keys(points).length <= 4;
@@ -47,12 +65,12 @@ function App() {
             setIsSubmitting(false);
             return;
         }
-        const payload = {
-            points, faculties: selectedFaculties.map(({faculty_id, year}) => ({faculty_id, year})),
-        };
+
+        const payload = prepareAnalyzePayload(points, selectedFaculties);
+
         setIsSubmitting(true);
         try {
-            const response = await axios.post(process.env.REACT_APP_API_URL + "/analyze", payload);
+            const response = await axios.post(process.env.REACT_APP_API_URL + "/analysis", payload);
             if (response.status !== 200) {
                 alert("მონაცემები ვერ გაიგზავნა, კვლავ სცადეთ :(");
                 setIsSubmitting(false);

@@ -6,6 +6,16 @@ export const subjects = {
     BIOLOGY: {name: "ბიოლოგია", score: 70},
 };
 
+export const subject_points = {
+    "GEORGIAN LANGUAGE": 60,
+    "FOREIGN LANGUAGE": 70,
+    "MATHEMATICS": 51,
+    "HISTORY": 60,
+    "CHEMISTRY": 63,
+    "PHYSICS": 63,
+    "BIOLOGY": 70,
+};
+
 export const allowed_combinations = {
     MATHEMATICS: ["MATHEMATICS"],
     HISTORY: ["HISTORY"],

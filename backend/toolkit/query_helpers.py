@@ -42,7 +42,7 @@ def get_enrollment_thresholds(faculty_id, year, subject, cursor):
             MAX(contest_score)
         FROM enrollment e
         JOIN result r ON e.student_id = r.enrollment_id
-        WHERE faculty_id = ? AND year = ? AND r.subject_name = ?
+        WHERE faculty_id = %s AND year = %s AND r.subject_name = %s
     """
     cursor.execute(query, (faculty_id, year, subject))
     row = cursor.fetchone()
@@ -59,10 +59,10 @@ def get_total_enrolled_and_rank(cursor, faculty_id, year, score, elected_subject
     cursor.execute("""
         SELECT 
             COUNT(*) as total_enrolled,
-            COUNT(*) FILTER (WHERE contest_score > ?) + 1 AS rank
+            COUNT(*) FILTER (WHERE contest_score > %s) + 1 AS rank
         FROM enrollment e
         JOIN result r ON r.enrollment_id = e.student_id
-        WHERE faculty_id = ? AND year = ? AND r.subject_name = ?
+        WHERE faculty_id = %s AND year = %s AND r.subject_name = %s
     """, (score, faculty_id, year, elected_subject))
     return cursor.fetchone()
 
@@ -81,11 +81,11 @@ def extract_elected_subject(chosen_subjects):
 
 
 def get_faculty_subject_weights(cursor, faculty_id, year, subjects):
-    placeholders = ','.join('?' for _ in subjects)
+    placeholders = ','.join('%s' for _ in subjects)
     query = f"""
         SELECT subject_name, weight, seats
         FROM faculty_year_subjects
-        WHERE faculty_id = ? AND year = ? AND subject_name IN ({placeholders})
+        WHERE faculty_id = %s AND year = %s AND subject_name IN ({placeholders})
     """
 
     cursor.execute(query, [faculty_id, year] + subjects)
@@ -96,7 +96,7 @@ def get_total_capacity(cursor, faculty_id, year):
     cursor.execute("""
         SELECT capacity
         FROM faculty
-        WHERE id = ? AND year = ?
+        WHERE id = %s AND year = %s
     """, (faculty_id, year))
 
     return cursor.fetchone()[0]

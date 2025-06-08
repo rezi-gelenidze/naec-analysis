@@ -56,6 +56,7 @@ def search_faculties(
             COUNT(*) OVER() AS total_count
         FROM faculties_materialized_view
         WHERE {base_conditions}
+        ORDER BY faculty_id, year ASC
         LIMIT %s OFFSET %s
     """
 

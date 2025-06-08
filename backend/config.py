@@ -15,6 +15,7 @@ ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://calculator.qbit.ge",
+    "https://api.qbit.ge"
 ]
 
 

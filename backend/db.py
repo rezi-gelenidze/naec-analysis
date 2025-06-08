@@ -1,11 +1,10 @@
 import psycopg2
 import psycopg2.extras
-
+from psycopg2.pool import ThreadedConnectionPool
 from backend import config
 
-from psycopg2.pool import SimpleConnectionPool
 
-db_pool = SimpleConnectionPool(
+db_pool = ThreadedConnectionPool(
     minconn=config.DB_MIN_CONNECTIONS,
     maxconn=config.DB_MAX_CONNECTIONS,
     dsn=config.DATABASE_URL
@@ -13,23 +12,22 @@ db_pool = SimpleConnectionPool(
 
 def get_db():
     """
-    FastAPI dependency to get a database connection from the pool.
-    This will be injected into your route functions.
+    FastAPI dependency to get a DB cursor from pool.
+    Safely yields a DictCursor and manages commit/rollback.
     """
     conn = None
+    cursor = None
     try:
         conn = db_pool.getconn()
-        # Using DictCursor to get results as dictionaries
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         yield cursor
-        conn.commit() # Commit the transaction
+        conn.commit()
     except Exception as e:
-        print(f"Database error: {e}")
         if conn:
-            conn.rollback() # Rollback on error
-        raise
+            conn.rollback()
+        raise e
     finally:
-        if conn:
-            # Return the connection to the pool instead of closing it.
+        if cursor:
             cursor.close()
+        if conn:
             db_pool.putconn(conn)

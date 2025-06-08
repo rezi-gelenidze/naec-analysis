@@ -28,7 +28,7 @@ jobs:
       - name: Build React App
         run: CI='' npm run build
         env:
-          REACT_APP_API_URL: http://ec2-3-64-234-131.eu-central-1.compute.amazonaws.com
+          REACT_APP_API_URL: https://api.qbit.ge
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

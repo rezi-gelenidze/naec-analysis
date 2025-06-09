@@ -64,7 +64,7 @@ function App() {
     };
 
     const handleSubmit = async () => {
-        const validPoints = Object.values(points).every((value) => Number.isInteger(value));
+        const validPoints = Object.values(points).every((value) => Number.isFinite(value));
         const validKeys = Object.keys(points).length >= 3 && Object.keys(points).length <= 4;
         if (!validPoints || !validKeys) {
             toast({
@@ -106,10 +106,17 @@ function App() {
 
     const handlePointChange = (e) => {
         const {name, value, max} = e.target;
+        const maxNum = Number(max);
+
         if (value === "") {
             setPoints((prev) => ({...prev, [name]: ""}));
-        } else if (Number(value) >= 0 && Number(value) <= Number(max)) {
-            setPoints((prev) => ({...prev, [name]: parseInt(value)}));
+            return;
+        }
+
+        const numValue = parseFloat(value);
+
+        if (!isNaN(numValue) && numValue > 0 && numValue <= maxNum) {
+            setPoints((prev) => ({...prev, [name]: numValue}));
         }
     };
 
@@ -198,7 +205,7 @@ function App() {
                         <Button variant="link" colorScheme="blue" textDecoration="underline" onClick={openInstruction}>
                             ინსტრუქცია
                         </Button>
-                        <Button variant="link" colorScheme="teal"  textDecoration="underline" onClick={openHowItWorks}>
+                        <Button variant="link" colorScheme="teal" textDecoration="underline" onClick={openHowItWorks}>
                             როგორ მუშაობს?
                         </Button>
                     </HStack>

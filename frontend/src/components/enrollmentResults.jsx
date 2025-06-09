@@ -38,6 +38,10 @@ export default function EnrollmentResults({ selectedFaculties, enrollmentResults
               const match = enrollmentResults.find(
                 e => e.faculty_id === faculty.faculty_id && e.year === faculty.year
               );
+
+              // ignore if not in fetched results
+              if (!match) return null;
+
               return (
                 <React.Fragment key={`${faculty.faculty_id}-${faculty.year}`}>
                   <Tr>

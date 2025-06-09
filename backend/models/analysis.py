@@ -46,3 +46,9 @@ class EnrollmentResult(BaseModel):
 class AnalyzeResponse(BaseModel):
     grants: List[YearlyGrantResult]
     enrollments: List[EnrollmentResult]
+
+
+class FacultyData:
+    def __init__(self, faculty_id: str, year: int):
+        self.faculty_id = faculty_id
+        self.year = year

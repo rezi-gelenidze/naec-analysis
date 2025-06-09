@@ -1,25 +1,33 @@
 from typing import Dict
-from psycopg2.extras import DictCursor
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
-from backend.models.analysis import EnrollmentResult, YearlyGrantResult, SubjectGrant
+from backend.models.analysis import EnrollmentResult, YearlyGrantResult, SubjectGrant, FacultyData
 from backend.toolkit import query_helpers
 
 
-def calculate_scaled_points(points: Dict[str, float], cursor: DictCursor):
+async def calculate_scaled_points(points: Dict[str, float], session: AsyncSession):
     taken_subjects = tuple(points.keys())
-    placeholders = ",".join(["%s"] * len(taken_subjects))
 
-    query = f"""
+    query = text("""
         SELECT subject_name, year, mean, standard_deviation, max_score
         FROM exam
-        WHERE subject_name IN ({placeholders})
-        """
+        WHERE subject_name = ANY (:taken_subjects)
+        """)
 
-    cursor.execute(query, taken_subjects)
-    exam_data = cursor.fetchall()
+    result = await session.execute(query, {
+        "taken_subjects": taken_subjects
+    })
+    exam_data = result.mappings().fetchall()
 
-    scaled_scores = {}  # year -> {subject -> scaled_score}
-    for subject_name, year, mean, stddev, max_score in exam_data:
+    scaled_scores = {}  # each_year -> {subject -> scaled_score}
+    for row in exam_data:
+        subject_name = row['subject_name']
+        year = row['year']
+        mean = row['mean']
+        stddev = row['standard_deviation']
+        max_score = row['max_score']
+
         # Some year max points differ, so we take current years percentage * target year max points
         taken_point = points[subject_name] * max_score
         scaled = 15 * ((taken_point - mean) / stddev) + 150
@@ -28,7 +36,7 @@ def calculate_scaled_points(points: Dict[str, float], cursor: DictCursor):
     return scaled_scores
 
 
-def check_grant_status(scaled_points_by_year, cursor: DictCursor):
+async def check_grant_status(scaled_points_by_year, session: AsyncSession):
     results = []
     for year, subject_scores in scaled_points_by_year.items():
         geo = subject_scores.get("GEORGIAN LANGUAGE", 0)
@@ -43,17 +51,24 @@ def check_grant_status(scaled_points_by_year, cursor: DictCursor):
         for subject, score in grant_subjects.items():
             grant_score = round((geo + foreign + 1.5 * score) * 10, 2)
 
-            cursor.execute("""
+            query = text("""
                 SELECT grant_amount
                 FROM "grant"
-                WHERE grant_score < %s
-                  AND subject_name = %s
-                  AND year = %s
+                WHERE grant_score < :grant_score
+                  AND subject_name = :subject_name
+                  AND year = :year
                 ORDER BY grant_score DESC
                 LIMIT 1
-            """, (grant_score, subject, year))
-            row = cursor.fetchone()
-            grant_amount = row[0] if row else 0
+            """)
+
+            result = await session.execute(query, {
+                "grant_score": grant_score,
+                "subject_name": subject,
+                "year": year
+            })
+
+            grant_amount = result.scalar_one_or_none()
+            grant_amount = grant_amount if grant_amount is not None else 0 # Default to 0 if no grant
 
             all_grants.append(
                 SubjectGrant(
@@ -74,29 +89,39 @@ def check_grant_status(scaled_points_by_year, cursor: DictCursor):
     return results
 
 
-def check_enrollment_status(scaled_points_by_year, faculty, cursor: DictCursor):
+async def check_enrollment_status(
+        scaled_points_by_year: Dict[int, Dict[str, float]],
+        faculty: FacultyData,
+        session: AsyncSession
+) -> EnrollmentResult:
+    """
+    Checks the enrollment status for a given faculty and student's scaled scores.
+    Now fully asynchronous, using the refactored query_helpers.
+    """
     faculty_id, year = faculty.faculty_id, faculty.year
     scaled_scores = scaled_points_by_year[year]
     subjects = list(scaled_scores.keys())
 
-    weights = query_helpers.get_faculty_subject_weights(cursor, faculty_id, year, subjects)
+    weights = await query_helpers.get_faculty_subject_weights(session, faculty_id, year, subjects)
 
     if len(weights) != len(subjects):
         raise ValueError("Mismatch between given subjects and faculty offered subjects.")
 
     elected_subject = query_helpers.extract_elected_subject(set(subjects))
 
-    # Step 1: Calculate contest score for enrollment
     contest_score = query_helpers.compute_contest_score(scaled_scores, weights)
 
-    # Step 2: Check rank in the enrollment rating and total enrolled
-    total_enrolled, rank = query_helpers.get_total_enrolled_and_rank(cursor, faculty_id, year, contest_score,
-                                                                     elected_subject)
+    total_enrolled_rank_data = await query_helpers.get_total_enrolled_and_rank(
+        session, faculty_id, year, contest_score, elected_subject
+    )
+    total_enrolled = total_enrolled_rank_data['total_enrolled']
+    rank = total_enrolled_rank_data['rank']
 
-    # Step 3: Get metadata of that year enrollment
-    total_available = query_helpers.get_total_capacity(cursor, faculty_id, year)
+    total_available = await query_helpers.get_total_capacity(session, faculty_id, year)
+
     seats_with_subject = query_helpers.get_seats_with_subject(weights, total_available)
-    thresholds = query_helpers.get_enrollment_thresholds(faculty_id, year, elected_subject, cursor)
+
+    thresholds = await query_helpers.get_enrollment_thresholds(faculty_id, year, elected_subject, session)
 
     return EnrollmentResult(
         faculty_id=faculty_id,
@@ -104,7 +129,6 @@ def check_enrollment_status(scaled_points_by_year, faculty, cursor: DictCursor):
         contest_score=contest_score,
         thresholds=thresholds,
         rank=rank,
-
         total_enrolled=total_enrolled,
         total_available=total_available,
         seats_with_subject=seats_with_subject

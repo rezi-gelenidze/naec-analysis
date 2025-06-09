@@ -1,55 +1,52 @@
-from typing import List
-from psycopg2.extras import DictCursor
+from typing import List, Dict, Any, Tuple
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
 from backend import config
 from backend.models import faculties as faculties_models
 
 
-def search_faculties(
-        db_cursor: DictCursor,
+async def search_faculties(
+        session: AsyncSession,
         subjects: List[str],
         filters: faculties_models.FacultyQueryFilters,
-):
+) -> Tuple[List[faculties_models.FacultyItem], int]:
     offset = (filters.page - 1) * config.LIMIT_PER_PAGE
 
-    # Prepare base WHERE clause
     base_conditions = "1=1"
-    params = []
+    params: Dict[str, Any] = {}
 
     year: int | None = filters.year
     university: str = filters.university
     faculty: str = filters.faculty
 
-    # Filter 0: Year filtering
     if year is not None:
         year = int(year)
-        base_conditions += " AND year = %s"
-        params.append(year)
+        base_conditions += " AND year = :year_param"
+        params["year_param"] = year
 
-    # Filter 1: Branch subject based filtering, to avoid subset selection
-
-    # Medical faculties with biology + elective
     if len(subjects) == 2:
         base_conditions += " AND elective_count > 0 AND required_count = 3"
     else:
-        # another faculties are all with 1 elective
         base_conditions += " AND (required_count = total_subjects_count OR (required_count = 2 AND elective_count > 0))"
 
-    # Filter 2-3: Add university and faculty filtering
     if university:
-        base_conditions += " AND (LOWER(university_name) LIKE %s OR university_id LIKE %s)"
-        params.extend([f"%{university}%", f"%{university}%"])
+        base_conditions += " AND (LOWER(university_name) LIKE :university_like_1 OR university_id LIKE :university_like_2)"
+        params["university_like_1"] = f"%{university}%"
+        params["university_like_2"] = f"%{university}%"
     if faculty:
-        base_conditions += " AND (LOWER(faculty_name) LIKE %s OR faculty_id LIKE %s)"
-        params.extend([f"%{faculty}%", f"%{faculty}%"])
+        base_conditions += " AND (LOWER(faculty_name) LIKE :faculty_like_1 OR faculty_id LIKE :faculty_like_2)"
+        params["faculty_like_1"] = f"%{faculty}%"
+        params["faculty_like_2"] = f"%{faculty}%"
 
+    subject_conditions = []
+    for i, s in enumerate(subjects):
+        param_name = f"subject_like_{i}"
+        subject_conditions.append(f"subjects LIKE :{param_name}")
+        params[param_name] = f"%{s}%"
+    if subject_conditions:
+        base_conditions += " AND (" + " AND ".join(subject_conditions) + ")"
 
-    # Filter 4: Add subjects filtering
-    for s in subjects:
-        base_conditions += " AND subjects LIKE %s"
-        params.append(f"%{s}%")
-
-    # Main paginated query
     full_query = f"""
         SELECT
             *,
@@ -57,17 +54,17 @@ def search_faculties(
         FROM faculties_materialized_view
         WHERE {base_conditions}
         ORDER BY faculty_id, year ASC
-        LIMIT %s OFFSET %s
+        LIMIT :limit_param OFFSET :offset_param
     """
 
-    params.extend([config.LIMIT_PER_PAGE, offset])
-    db_cursor.execute(full_query, params)
-    rows = db_cursor.fetchall()
+    params["limit_param"] = config.LIMIT_PER_PAGE
+    params["offset_param"] = offset
 
-    # Extract total count window function result
+    result = await session.execute(text(full_query), params)
+    rows = result.mappings().fetchall()
+
     total = rows[0]['total_count'] if rows else 0
 
-    # Serialize the response and return
     items = []
     for row in rows:
         subjects_list = row["subjects"].split(",") if row["subjects"] else []

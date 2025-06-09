@@ -9,6 +9,8 @@ fastapi = "*"
 psycopg2-binary = "*"
 uvicorn = "*"
 gunicorn = "*"
+sqlalchemy = {extras = ["asyncio"], version = "*"}
+asyncpg = "*"
 
 [dev-packages]
 

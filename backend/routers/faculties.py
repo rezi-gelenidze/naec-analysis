@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
-from psycopg2.extras import DictCursor
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import db, config
 
@@ -17,7 +17,7 @@ router = APIRouter()
 async def get_faculties(
     filters: faculties_models.FacultyQueryFilters = Depends(),
     subjects: str = Query(..., description="Comma-separated subject list (e.g. MATH,PHYSICS)"),
-    db_cursor: DictCursor = Depends(db.get_db)
+    session: AsyncSession = Depends(db.get_db)
 ):
     """
     Search for faculties based on various filter criteria.
@@ -36,8 +36,8 @@ async def get_faculties(
         )
 
     # Delegate calculation to service layer
-    items, total = faculties_service.search_faculties(
-        db_cursor=db_cursor,
+    items, total = await faculties_service.search_faculties(
+        session=session,
         subjects=subjects,
         filters=filters
     )

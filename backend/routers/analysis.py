@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from psycopg2.extras import DictCursor
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import db
 
@@ -16,14 +16,14 @@ router = APIRouter()
 )
 async def analyze(
         data: analysis_models.AnalyzeRequest,
-        db_cursor: DictCursor = Depends(db.get_db)
+        session: AsyncSession = Depends(db.get_db)
 ):
     try:
-        scaled_points = analysis_service.calculate_scaled_points(data.points, db_cursor)
+        scaled_points = await analysis_service.calculate_scaled_points(data.points, session)
 
-        grants = analysis_service.check_grant_status(scaled_points, db_cursor)
+        grants = await analysis_service.check_grant_status(scaled_points, session)
         enrollments = [
-            analysis_service.check_enrollment_status(scaled_points, faculty, db_cursor)
+            await analysis_service.check_enrollment_status(scaled_points, faculty, session)
             for faculty in data.faculties
         ]
 

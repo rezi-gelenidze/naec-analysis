@@ -1,7 +1,21 @@
 import React, {useState, useRef} from "react";
 import {
-    Box, Button, Container, Text, VStack, HStack, Divider, useColorModeValue, Tag, SimpleGrid, useToast, useDisclosure
+    Box,
+    Button,
+    Container,
+    Text,
+    VStack,
+    HStack,
+    Divider,
+    useColorModeValue,
+    Tag,
+    SimpleGrid,
+    useToast,
+    useDisclosure,
+    Icon,
+    Link
 } from "@chakra-ui/react";
+import {FaLinkedin, FaGithub} from "react-icons/fa";
 
 import axios from "axios";
 
@@ -112,8 +126,9 @@ function App() {
             setPoints((prev) => ({...prev, [name]: ""}));
             return;
         }
+        const normalizedValue = value.replace(",", ".");
 
-        const numValue = parseFloat(value);
+        const numValue = parseFloat(normalizedValue);
 
         if (!isNaN(numValue) && numValue > 0 && numValue <= maxNum) {
             setPoints((prev) => ({...prev, [name]: numValue}));
@@ -211,18 +226,21 @@ function App() {
                     </HStack>
 
                     {/* Author */}
-                    <Text fontSize="sm" color="gray.500" textAlign="center" fontWeight='bold'>
-                        ავტორი:{' '}
-                        <Box
-                            as="a"
-                            href="https://www.linkedin.com/in/rezi-gelenidze/"
-                            color="teal.600"
-                            _hover={{textDecoration: "underline"}}
-                            display="inline"
-                        >
-                            რეზი გელენიძე
-                        </Box>
-                    </Text>
+
+                    <HStack justifyContent="center" fontSize="md">
+                        <Text color="gray.700" fontWeight="bold">
+                            ავტორი | რეზი გელენიძე
+                        </Text>
+
+                        <HStack justify="center" mt={2}>
+                            <Link href="https://www.linkedin.com/in/rezi-gelenidze/" isExternal>
+                                <Icon as={FaLinkedin} boxSize={5} color="blue.500"/>
+                            </Link>
+                            <Link href="https://github.com/rezi-gelenidze" isExternal>
+                                <Icon as={FaGithub} boxSize={5} _hover={{color: "gray.700"}}/>
+                            </Link>
+                        </HStack>
+                    </HStack>
                 </VStack>
             </Container>
 

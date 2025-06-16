@@ -24,12 +24,12 @@ const Navbar = () => {
       top={0}
       zIndex={10}
     >
-      <HStack spacing={4} justifyContent="space-between" w="100%">
+      <HStack justifyContent="space-between" w="100%">
         <Text
           as="a"
           href="https://qbit.ge"
           target="_blank"
-          fontSize="xl"
+          fontSize={{ base: "sm", md: "lg" }}
           fontWeight="bold"
           color="teal.800"
         >

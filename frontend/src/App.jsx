@@ -1,4 +1,4 @@
-import React, {useState, useRef} from "react";
+import React, {useState, useRef, useEffect} from "react";
 import {
     Box,
     Button,
@@ -31,6 +31,7 @@ import ModalHowItWorks from "./components/ModalHowItWorks";
 import ModalInstruction from "./components/ModalInstruction";
 
 import {subjects, subject_points, allowed_combinations} from "./constants";
+import SurpriseSubscribeModal from "./components/SubscribeModal";
 
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
     const [enrollmentResults, setEnrollmentResults] = useState([]);
 
     const [modalOpen, setModalOpen] = useState(false);
+    const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showTables, setShowTables] = useState(false);
     const tableRef = useRef(null);
@@ -61,6 +63,15 @@ function App() {
 
     const toast = useToast();
 
+    useEffect(() => {
+        const isSubscribed = localStorage.getItem("subscribedToChannel");
+        if (!isSubscribed) {
+            const timeout = setTimeout(() => {
+                setSubscribeModalOpen(true); // open your surprise modal
+            }, 2500);
+            return () => clearTimeout(timeout);
+        }
+    }, []);
 
     const prepareAnalyzePayload = (rawPoints, selectedFaculties) => {
         const points = Object.fromEntries(Object.entries(rawPoints)
@@ -153,6 +164,8 @@ function App() {
     return (
         <Box bg={useColorModeValue("gray.100", "gray.900")} minH="100vh">
             <Navbar/>
+
+            <SurpriseSubscribeModal isOpen={subscribeModalOpen} onClose={() => setSubscribeModalOpen(false)} />
             <ModalHowItWorks isOpen={isHowItWorksOpen} onClose={closeHowItWorks}/>
             <ModalInstruction isOpen={isInstructionOpen} onClose={closeInstruction}/>
 

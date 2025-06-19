@@ -27,7 +27,7 @@ const Navbar = () => {
       <HStack justifyContent="space-between" w="100%">
         <Text
           as="a"
-          href="https://qbit.ge"
+          href="https://taap.it/KGKboN"
           target="_blank"
           fontSize={{ base: "sm", md: "lg" }}
           fontWeight="bold"
@@ -42,7 +42,7 @@ const Navbar = () => {
           _hover={{ bg: "red.500" }}
           rounded="xl"
           as="a"
-          href="https://www.youtube.com/@qbit-geo"
+          href="https://taap.it/XBlCqz"
           target="_blank"
         >
           ჩვენი არხი 🎥

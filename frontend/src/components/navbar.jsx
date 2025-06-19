@@ -5,8 +5,22 @@ import {
   Spacer,
   Text
 } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 
 const Navbar = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
+
+  const calculatorLink = isMobile
+    ? "https://taap.it/KGKboN"
+    : "https://qbit.ge/content/intro.html";
+  const channelLink = isMobile
+    ? "https://taap.it/XBlCqz"
+    : "https://www.youtube.com/@qbit-geo?sub_confirmation=1";
+
   return (
     <Box
       as="nav"
@@ -27,7 +41,7 @@ const Navbar = () => {
       <HStack justifyContent="space-between" w="100%">
         <Text
           as="a"
-          href="https://taap.it/KGKboN"
+          href={calculatorLink}
           target="_blank"
           fontSize={{ base: "sm", md: "lg" }}
           fontWeight="bold"
@@ -42,7 +56,7 @@ const Navbar = () => {
           _hover={{ bg: "red.500" }}
           rounded="xl"
           as="a"
-          href="https://taap.it/XBlCqz"
+          href={channelLink}
           target="_blank"
         >
           ჩვენი არხი 🎥
